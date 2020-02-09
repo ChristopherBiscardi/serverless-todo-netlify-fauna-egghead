@@ -18,6 +18,14 @@ export default props => {
         >
           Log In
         </Button>
+        <Button
+          sx={{ marginTop: 2 }}
+          onClick={() => {
+            console.log(netlifyIdentity.currentUser());
+          }}
+        >
+          log user
+        </Button>
       </Flex>
     </Container>
   );
