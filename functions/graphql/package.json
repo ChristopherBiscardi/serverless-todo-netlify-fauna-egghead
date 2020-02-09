@@ -1,0 +1,11 @@
+{
+  "name": "graphql-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "christopherbiscardi <chris@christopherbiscardi.com> (@chrisbiscardi)",
+  "license": "MIT",
+  "dependencies": {
+    "apollo-server-lambda": "^2.10.0",
+    "graphql": "^14.6.0"
+  }
+}
