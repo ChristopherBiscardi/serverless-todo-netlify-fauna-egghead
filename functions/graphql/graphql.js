@@ -1,8 +1,15 @@
 const { ApolloServer, gql } = require("apollo-server-lambda");
-const faunadb = require("faunadb");
-const q = faunadb.query;
+const AWS = require("aws-sdk");
+const uuid = require("uuid/v4");
 
-var client = new faunadb.Client({ secret: process.env.FAUNA });
+AWS.config.update({
+  region: "us-east-2",
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+});
+
+const table = "todos";
+const docClient = new AWS.DynamoDB.DocumentClient();
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
@@ -27,14 +34,21 @@ const resolvers = {
       if (!user) {
         return [];
       } else {
-        const results = await client.query(
-          q.Paginate(q.Match(q.Index("todos_by_user"), user))
-        );
-        return results.data.map(([ref, text, done]) => ({
-          id: ref.id,
-          text,
-          done
-        }));
+        const params = {
+          TableName: table,
+          KeyConditionExpression: "pk = :userid and begins_with(sk, :todokey)",
+          ExpressionAttributeValues: {
+            ":userid": `user#${user}`,
+            ":todokey": "todo#"
+          }
+        };
+        const result = await docClient.query(params).promise();
+        return result.Items.map(({ pk, sk, data }) => {
+          return {
+            id: sk.replace("todo#", ""),
+            ...data
+          };
+        });
       }
     }
   },
@@ -43,34 +57,54 @@ const resolvers = {
       if (!user) {
         throw new Error("Must be authenticated to insert todos");
       }
-      const results = await client.query(
-        q.Create(q.Collection("todos"), {
+      const todoUuid = uuid();
+      const params = {
+        TableName: table,
+        Item: {
+          pk: `user#${user}`,
+          sk: `todo#${todoUuid}`,
           data: {
-            text,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
             done: false,
-            owner: user
+            text
           }
-        })
-      );
+        }
+      };
+      await docClient.put(params).promise();
       return {
-        ...results.data,
-        id: results.ref.id
+        id: todoUuid,
+        done: false,
+        text
       };
     },
     updateTodoDone: async (_, { id }, { user }) => {
       if (!user) {
         throw new Error("Must be authenticated to insert todos");
       }
-      const results = await client.query(
-        q.Update(q.Ref(q.Collection("todos"), id), {
-          data: {
-            done: true
-          }
-        })
-      );
+      const params = {
+        TableName: table,
+        Key: {
+          pk: `user#${user}`,
+          sk: `todo#${id}`
+        },
+        UpdateExpression: "set #data.#done = :newdone",
+        ExpressionAttributeNames: {
+          "#data": "data",
+          "#done": "done"
+        },
+        ExpressionAttributeValues: {
+          ":newdone": true
+        },
+        ReturnValues: "ALL_NEW"
+      };
+      const result = await docClient.update(params).promise();
+
+      const { pk, sk, data } = result.Attributes;
       return {
-        ...results.data,
-        id: results.ref.id
+        id: sk.replace("todo#", ""),
+        text: data.text,
+        done: data.done
       };
     }
   }
