@@ -20,6 +20,8 @@ provider:
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:us-east-2:*:table/todos"
 functions:
+  auth:
+    handler: handler.auth
   graphql:
     handler: handler.graphql
     description: The core GraphQL API for todos
@@ -27,4 +29,5 @@ functions:
       - http:
           path: /graphql
           method: post
+          authorizer: auth
           cors: true

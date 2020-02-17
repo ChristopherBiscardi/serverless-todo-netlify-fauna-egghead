@@ -114,8 +114,8 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ context }) => {
-    if (context.clientContext.user) {
-      return { user: context.clientContext.user.sub };
+    if (context.requestContext.authorizer.principalId) {
+      return { user: context.requestContext.authorizer.principalId };
     } else {
       return {};
     }
