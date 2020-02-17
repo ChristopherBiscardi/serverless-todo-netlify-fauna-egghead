@@ -25,32 +25,33 @@ async function run() {
   // };
   // const result = await docClient.put(params).promise();
 
-  // const params = {
-  //   TableName: table,
-  //   Key: {
-  //     pk: "user#1",
-  //     sk: "todo#c6040ea7-3272-4696-b8ce-cc1d1c42f6ee"
-  //   },
-  //   UpdateExpression: "set #data.#done = :newdone",
-  //   ExpressionAttributeNames: {
-  //     "#data": "data",
-  //     "#done": "done"
-  //   },
-  //   ExpressionAttributeValues: {
-  //     ":newdone": true
-  //   }
-  // };
-  // const result = await docClient.update(params).promise();
-
   const params = {
     TableName: table,
-    KeyConditionExpression: "pk = :userid and begins_with(sk, :todokey)",
+    Key: {
+      pk: "user#1",
+      sk: "todo#c6040ea7-3272-4696-b8ce-cc1d1c42f6ee"
+    },
+    UpdateExpression: "set #data.#done = :newdone",
+    ExpressionAttributeNames: {
+      "#data": "data",
+      "#done": "done"
+    },
     ExpressionAttributeValues: {
-      ":userid": "user#1",
-      ":todokey": "todo#"
-    }
+      ":newdone": true
+    },
+    ReturnValues: "ALL_NEW"
   };
-  const result = await docClient.query(params).promise();
+  const result = await docClient.update(params).promise();
+
+  // const params = {
+  //   TableName: table,
+  //   KeyConditionExpression: "pk = :userid and begins_with(sk, :todokey)",
+  //   ExpressionAttributeValues: {
+  //     ":userid": "user#1",
+  //     ":todokey": "todo#"
+  //   }
+  // };
+  // const result = await docClient.query(params).promise();
   console.log(JSON.stringify(result, null, 2));
 }
 
