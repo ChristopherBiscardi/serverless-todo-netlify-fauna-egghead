@@ -113,9 +113,9 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: ({ context }) => {
-    if (context.requestContext.authorizer.principalId) {
-      return { user: context.requestContext.authorizer.principalId };
+  context: ({ event }) => {
+    if (event.requestContext.authorizer.principalId) {
+      return { user: event.requestContext.authorizer.principalId };
     } else {
       return {};
     }
